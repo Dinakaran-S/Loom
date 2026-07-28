@@ -4,6 +4,7 @@ const { AGENTS, isValidAgent } = require("../config/agentDefinitions");
 const agentRunModel = require("../models/agentRun.model");
 const logger = require("../utils/logger");
 const { ValidationError } = require("../utils/errors");
+const credentialService = require("./credential.service");
 
 function buildUserPrompt(taskDescription, contract) {
   let prompt = `Task:\n${taskDescription}`;
@@ -28,12 +29,29 @@ function parseModelOutput(rawText) {
   }
 }
 
+function validateFiles(files) {
+  if (!Array.isArray(files)) return [];
+  if (files.length > 30) throw new ValidationError("An agent returned too many files");
+  const paths = new Set();
+  return files.map((file) => {
+    if (!file || typeof file.path !== "string" || !file.path.trim() || typeof file.code !== "string") {
+      throw new ValidationError("An agent returned an invalid file artifact");
+    }
+    if (file.path.length > 240 || file.code.length > 500_000 || paths.has(file.path)) {
+      throw new ValidationError("An agent returned duplicate or oversized file artifacts");
+    }
+    paths.add(file.path);
+    return { path: file.path, code: file.code };
+  });
+}
+
 async function generate({ userId, agentName, taskDescription, contract, providerKind, taskId }) {
   if (!isValidAgent(agentName)) {
     throw new ValidationError(`Unknown agent: ${agentName}`);
   }
 
-  const provider = getProvider(providerKind);
+  const userGroqKey = providerKind === "free" ? await credentialService.getGroqKey(userId) : "";
+  const provider = getProvider(providerKind, userGroqKey ? { apiKey: userGroqKey } : {});
   const runId = uuidv4();
   const systemPrompt = AGENTS[agentName].systemPrompt;
 
@@ -44,6 +62,7 @@ async function generate({ userId, agentName, taskDescription, contract, provider
     });
 
     const parsed = parseModelOutput(text);
+    parsed.files = validateFiles(parsed.files);
 
     await agentRunModel.create({
       id: runId,

@@ -47,4 +47,20 @@ async function listFiles(projectId) {
   }
 }
 
-module.exports = { writeFiles, listFiles };
+async function readFile(projectId, requestedPath) {
+  const workspace = path.resolve(rootPath(), projectId);
+  const relativePath = safeRelativePath(requestedPath);
+  const target = path.resolve(workspace, relativePath);
+  if (!target.startsWith(`${workspace}${path.sep}`)) throw new ValidationError("Generated file escaped its workspace");
+  try {
+    const info = await fs.stat(target);
+    if (!info.isFile()) throw new ValidationError("Requested workspace path is not a file");
+    if (info.size > 500_000) throw new ValidationError("Requested file is too large to display");
+    return { path: relativePath, content: await fs.readFile(target, "utf8"), size: info.size };
+  } catch (err) {
+    if (err.code === "ENOENT") throw new ValidationError("Generated file not found");
+    throw err;
+  }
+}
+
+module.exports = { writeFiles, listFiles, readFile };

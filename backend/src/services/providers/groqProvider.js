@@ -4,8 +4,9 @@ const { ProviderError } = require("../../utils/errors");
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-async function generate({ systemPrompt, userPrompt }) {
-  if (!env.providers.groqApiKey) {
+async function generate({ systemPrompt, userPrompt, apiKey }) {
+  const key = apiKey || env.providers.groqApiKey;
+  if (!key) {
     throw new ProviderError("Groq API key not configured");
   }
   try {
@@ -21,7 +22,7 @@ async function generate({ systemPrompt, userPrompt }) {
       },
       {
         headers: {
-          Authorization: `Bearer ${env.providers.groqApiKey}`,
+          Authorization: `Bearer ${key}`,
           "content-type": "application/json",
         },
         timeout: 60_000,

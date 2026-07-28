@@ -231,7 +231,7 @@ function AgentCard({ agent }) {
   );
 }
 
-function Dashboard({ agents, project, files }) {
+function Dashboard({ agents, project, projects, files, artifact, onOpenFile, onSelectProject }) {
   const working = agents.filter(a => a.status === "working").length;
   const done = agents.filter(a => a.status === "done").length;
   const errors = agents.filter(a => a.status === "error").length;
@@ -248,7 +248,16 @@ function Dashboard({ agents, project, files }) {
       </div>
       {project && <div style={{ marginTop: 18, fontFamily: FONT_BODY, color: T.textSec, fontSize: 13 }}>
         <strong style={{ color: T.text }}>{project.name}</strong> · {project.status}{project.integration_report?.explanation ? ` · ${project.integration_report.explanation}` : ""}
-        {files.length > 0 && <div style={{ marginTop: 8, color: T.textMuted }}>Generated: {files.join(", ")}</div>}
+        {files.length > 0 && <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 7 }}>
+          {files.map((file) => <button key={file} onClick={() => onOpenFile(file)} style={{ cursor: "pointer", border: `1px solid ${T.border}`, borderRadius: 6, padding: "5px 8px", background: T.surface, color: T.teal, fontFamily: FONT_MONO, fontSize: 11 }}>{file}</button>)}
+        </div>}
+      </div>}
+      {projects.length > 0 && <div style={{ marginTop: 16, display: "flex", gap: 7, flexWrap: "wrap" }}>
+        {projects.slice(0, 8).map((item) => <button key={item.id} onClick={() => onSelectProject(item.id)} style={{ cursor: "pointer", border: `1px solid ${item.id === project?.id ? T.teal : T.border}`, borderRadius: 7, padding: "7px 9px", background: T.card, color: T.textSec, fontFamily: FONT_BODY, fontSize: 12 }}>{item.name} · {item.status}</button>)}
+      </div>}
+      {artifact && <div style={{ marginTop: 16, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ padding: "10px 14px", fontFamily: FONT_MONO, fontSize: 12, color: T.textSec, borderBottom: `1px solid ${T.border}` }}>{artifact.path} · {artifact.size} bytes</div>
+        <pre style={{ margin: 0, padding: 14, maxHeight: 360, overflow: "auto", whiteSpace: "pre-wrap", color: T.text, fontFamily: FONT_MONO, fontSize: 12, lineHeight: 1.55 }}>{artifact.content}</pre>
       </div>}
     </div>
   );
@@ -455,6 +464,7 @@ export default function Loom() {
   const [project, setProject] = useState(null);
   const [projects, setProjects] = useState([]);
   const [files, setFiles] = useState([]);
+  const [artifact, setArtifact] = useState(null);
   const [busy, setBusy] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [settingsBusy, setSettingsBusy] = useState(false);
@@ -466,6 +476,7 @@ export default function Loom() {
     api("/settings/providers", { token })
       .then((result) => setGroqSettings({ configured: result.groqConfigured, model: result.groqModel }))
       .catch(() => {});
+    api("/projects", { token }).then((result) => setProjects(result || [])).catch(() => {});
   }, [token]);
 
   useEffect(() => {
@@ -488,6 +499,7 @@ export default function Loom() {
     }));
     const workspace = await api(`/projects/${projectId}/files`, { token });
     setFiles(workspace.files);
+    setProjects((current) => current.map((item) => item.id === result.project.id ? { ...item, status: result.project.status } : item));
   };
 
   useEffect(() => {
@@ -522,6 +534,7 @@ export default function Loom() {
     try {
       const planned = await api("/projects", { token, method: "POST", body: { name, spec, provider: "free" } });
       setProject(planned.project);
+      setProjects((current) => [planned.project, ...current]);
       setView("dashboard");
       const result = await api(`/projects/${planned.project.id}/run`, { token, method: "POST", body: { provider: "free" } });
       setProject(result.project);
@@ -549,6 +562,12 @@ export default function Loom() {
 
   const saveProviderPreference = async (agentName, provider) => {
     await api(`/agents/${agentName}/preference`, { token, method: "PUT", body: { provider } });
+  };
+
+  const openFile = async (path) => {
+    if (!project?.id) return;
+    try { setArtifact(await api(`/projects/${project.id}/file?path=${encodeURIComponent(path)}`, { token })); }
+    catch (err) { setError(err.message); }
   };
 
   if (!token) return (
@@ -600,7 +619,7 @@ export default function Loom() {
           </div>
 
           {error && <div style={{ color: T.error, fontFamily: FONT_BODY, fontSize: 13, marginBottom: 12 }}>{error}</div>}
-          {view === "dashboard" && <Dashboard agents={agents} project={project} files={files} />}
+          {view === "dashboard" && <Dashboard agents={agents} project={project} projects={projects} files={files} artifact={artifact} onOpenFile={openFile} onSelectProject={(id) => refreshProject(id).catch((err) => setError(err.message))} />}
           {view === "providers" && <Providers agents={agents} setAgents={setAgents} onSave={saveProviderPreference} />}
           {view === "settings" && <SettingsPanel configured={groqSettings.configured} model={groqSettings.model} onSave={saveGroqKey} busy={settingsBusy} />}
           {view === "new" && <NewProject onLaunch={launch} busy={busy} />}

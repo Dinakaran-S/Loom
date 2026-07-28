@@ -15,4 +15,8 @@ const projectIdParamSchema = z.object({
   id: z.string().uuid("Invalid project id"),
 });
 
-module.exports = { createProjectSchema, runProjectSchema, projectIdParamSchema };
+const fileQuerySchema = z.object({
+  path: z.string().min(1).max(240),
+});
+
+module.exports = { createProjectSchema, runProjectSchema, projectIdParamSchema, fileQuerySchema };

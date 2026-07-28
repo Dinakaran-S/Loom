@@ -4,6 +4,7 @@ const { ProviderError } = require("../src/utils/errors");
 
 jest.mock("../src/services/providers/providerFactory");
 jest.mock("../src/models/agentRun.model");
+jest.mock("../src/services/credential.service", () => ({ getGroqKey: jest.fn().mockResolvedValue("") }));
 
 const { getProvider } = require("../src/services/providers/providerFactory");
 const agentRunModel = require("../src/models/agentRun.model");

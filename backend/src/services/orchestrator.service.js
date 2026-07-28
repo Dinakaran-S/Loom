@@ -44,14 +44,26 @@ function parseTaskGraph(rawText) {
   } catch {
     throw new ProviderError("Orchestrator did not return valid JSON");
   }
-  if (!Array.isArray(parsed.tasks) || parsed.tasks.length === 0) {
+  if (!Array.isArray(parsed.tasks) || parsed.tasks.length === 0 || parsed.tasks.length > 12) {
     throw new ProviderError("Orchestrator returned no tasks");
   }
+  const ids = new Set();
   for (const t of parsed.tasks) {
-    if (!AGENT_NAMES.includes(t.agent)) {
-      throw new ProviderError(`Orchestrator assigned an unknown agent: ${t.agent}`);
+    if (!t || typeof t.id !== "string" || !t.id.trim() || ids.has(t.id) || !AGENT_NAMES.includes(t.agent)
+      || typeof t.description !== "string" || t.description.trim().length < 10
+      || (t.dependsOn !== undefined && (!Array.isArray(t.dependsOn) || t.dependsOn.some((d) => typeof d !== "string")))) {
+      throw new ProviderError("Orchestrator returned an invalid task");
+    }
+    ids.add(t.id);
+  }
+  for (const t of parsed.tasks) {
+    const deps = t.dependsOn || [];
+    if (deps.includes(t.id) || deps.some((id) => !ids.has(id))) {
+      throw new ProviderError("Orchestrator returned an invalid task dependency");
     }
   }
+  try { topoLayers(parsed.tasks.map((t) => ({ id: t.id, depends_on: t.dependsOn || [] }))); }
+  catch { throw new ProviderError("Orchestrator returned a cyclic task graph"); }
   return parsed.tasks;
 }
 
@@ -59,7 +71,8 @@ async function createProject({ userId, name, spec, providerKind = "free" }) {
   // Planning quality matters more than cost here — always use the paid
   // (stronger reasoning) provider for decomposition, regardless of what
   // the person picks for individual agents later.
-  const provider = getProvider(providerKind);
+  const planningKey = providerKind === "free" ? await require("./credential.service").getGroqKey(userId) : "";
+  const provider = getProvider(providerKind, planningKey ? { apiKey: planningKey } : {});
   const { text } = await provider.generate({
     systemPrompt: ORCHESTRATOR_SYSTEM_PROMPT,
     userPrompt: `Project spec:\n${spec}`,
@@ -90,7 +103,7 @@ async function runProject({ projectId, userId, providerKind = "free", providerOv
   const project = await projectModel.findByIdForUser(projectId, userId);
   if (!project) throw new ValidationError("Project not found");
 
-  await projectModel.updateStatus(projectId, "running");
+  await projectModel.claimRun(projectId, userId);
   emit(io, projectId, "project_started", { projectId });
 
   let tasks = await taskModel.listByProject(projectId);
@@ -99,6 +112,7 @@ async function runProject({ projectId, userId, providerKind = "free", providerOv
   Object.assign(providers, providerOverrides);
   const layers = topoLayers(tasks);
   const outputsById = new Map(); // taskId -> { explanation, files }
+  const claimedPaths = new Map();
 
   for (const layer of layers) {
     // Tasks in the same layer have no dependency on each other — run them
@@ -106,6 +120,12 @@ async function runProject({ projectId, userId, providerKind = "free", providerOv
     await Promise.all(
       layer.map(async (taskId) => {
         const task = tasks.find((t) => t.id === taskId);
+        const failedDependency = task.depends_on.some((depId) => !outputsById.has(depId));
+        if (failedDependency) {
+          await taskModel.updateStatus(task.id, "error");
+          emit(io, projectId, "task_failed", { taskId: task.id, agent: task.agent_name, error: "A required dependency failed" });
+          return;
+        }
         await taskModel.updateStatus(task.id, "running");
         emit(io, projectId, "task_started", { taskId: task.id, agent: task.agent_name });
 
@@ -126,6 +146,12 @@ async function runProject({ projectId, userId, providerKind = "free", providerOv
             providerKind: providers[task.agent_name] || providerKind,
             taskId: task.id,
           });
+          for (const file of result.files || []) {
+            if (claimedPaths.has(file.path)) {
+              throw new ValidationError(`Generated file collision: ${file.path} was already produced by ${claimedPaths.get(file.path)}`);
+            }
+          }
+          for (const file of result.files || []) claimedPaths.set(file.path, task.agent_name);
           outputsById.set(task.id, result);
           await taskModel.updateStatus(task.id, "done", result.runId);
           emit(io, projectId, "task_completed", { taskId: task.id, agent: task.agent_name, runId: result.runId });
@@ -146,9 +172,10 @@ async function runProject({ projectId, userId, providerKind = "free", providerOv
   while (!report.approved && reviewAttempts < Math.max(1, env.reviewMaxAttempts)) {
     const corrections = await Promise.all((report.conflicts || []).map(async (conflict, index) => {
       try {
+        const targetAgent = (conflict.agent && AGENT_NAMES.includes(conflict.agent)) ? conflict.agent : "coding";
         return await agentService.generate({
           userId,
-          agentName: "backend",
+          agentName: targetAgent,
           providerKind,
           taskDescription: `Fix this integration issue: ${conflict.description || conflict.suggestedFix || "Resolve the reviewer conflict"}`,
           contract: { files: integratorService.collectFiles(outputsById), conflict },

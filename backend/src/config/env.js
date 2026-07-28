@@ -53,4 +53,5 @@ module.exports = {
 
   projectsRoot: process.env.PROJECTS_ROOT || "./workspaces",
   reviewMaxAttempts: parseInt(process.env.REVIEW_MAX_ATTEMPTS || "2", 10),
+  credentialEncryptionKey: process.env.CREDENTIAL_ENCRYPTION_KEY || "",
 };

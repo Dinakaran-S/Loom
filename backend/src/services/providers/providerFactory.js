@@ -6,8 +6,12 @@ const providers = {
   free: groqProvider,
 };
 
-function getProvider(kind) {
-  return providers[kind] || providers.free;
+function getProvider(kind, options = {}) {
+  const provider = providers[kind] || providers.free;
+  return {
+    ...provider,
+    generate: (request) => provider.generate({ ...request, ...options }),
+  };
 }
 
 module.exports = { getProvider };

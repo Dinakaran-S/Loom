@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const { ConflictError } = require("../utils/errors");
 
 async function create({ id, userId, name, spec }) {
   await pool.execute(
@@ -22,6 +23,14 @@ async function updateStatus(id, status) {
   await pool.execute("UPDATE projects SET status = ? WHERE id = ?", [status, id]);
 }
 
+async function claimRun(id, userId) {
+  const [result] = await pool.execute(
+    "UPDATE projects SET status = 'running' WHERE id = ? AND user_id = ? AND status IN ('planning', 'done', 'failed')",
+    [id, userId]
+  );
+  if (result.affectedRows !== 1) throw new ConflictError("This project is already running or cannot be started");
+}
+
 async function setIntegrationReport(id, report) {
   await pool.execute(
     "UPDATE projects SET integration_report = ?, status = ? WHERE id = ?",
@@ -42,4 +51,4 @@ async function listByUser(userId, { page, limit }) {
   return { rows, total };
 }
 
-module.exports = { create, findById, findByIdForUser, updateStatus, setIntegrationReport, listByUser };
+module.exports = { create, findById, findByIdForUser, updateStatus, claimRun, setIntegrationReport, listByUser };

@@ -41,4 +41,10 @@ const getFiles = asyncHandler(async (req, res) => {
   return success(res, { files: await workspaceService.listFiles(req.params.id) });
 });
 
-module.exports = { createProject, listProjects, runProject, getProject, getFiles };
+const getFile = asyncHandler(async (req, res) => {
+  const result = await orchestratorService.getProject(req.params.id, req.user.id);
+  if (!result) throw new NotFoundError("Project not found");
+  return success(res, await workspaceService.readFile(req.params.id, req.query.path));
+});
+
+module.exports = { createProject, listProjects, runProject, getProject, getFiles, getFile };
