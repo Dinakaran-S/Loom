@@ -1,6 +1,6 @@
 # Loom — Multi-Agent Coding Platform
 
-A multi-agent system where 13 specialist agents (Planner, Research, Search,
+A multi-agent system where 17 specialist agents (Planner, Research, Search,
 Memory, RAG, Database, File, Vision, Coding, API Manager, Cloud & DevOps,
 Finance, and Email) collaborate with the existing Backend, Frontend, Testing,
 and Reviewer agents under an Orchestrator that plans and runs the work, and an
