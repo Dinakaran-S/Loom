@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 88" role="img" aria-labelledby="title">
+  <title id="title">Loom</title>
+  <defs>
+    <linearGradient id="thread" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#37E6C4"/><stop offset=".5" stop-color="#5F86FF"/><stop offset="1" stop-color="#B083FF"/></linearGradient>
+  </defs>
+  <path d="M18 66V24c0-7 9-10 14-5l18 18c9 9 23 9 32 0l20-20c9-9 23-9 32 0l18 18c9 9 23 9 32 0l20-20c5-5 14-2 14 5v46" fill="none" stroke="url(#thread)" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/>
+  <path d="M32 20l40 40m44-40l40 40" fill="none" stroke="#F3F7FF" stroke-linecap="round" stroke-width="5" opacity=".9"/>
+  <text x="222" y="56" fill="#F3F7FF" font-family="Arial, sans-serif" font-size="35" font-weight="700" letter-spacing="-1">Loom</text>
+</svg>

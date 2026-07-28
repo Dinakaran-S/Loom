@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: loom
+      MYSQL_USER: loom_app
+      MYSQL_PASSWORD: loom_app_password
+      MYSQL_ROOT_PASSWORD: local_root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DB_HOST: db
+      DB_USER: loom_app
+      DB_PASSWORD: loom_app_password
+      DB_NAME: loom
+    ports:
+      - "4000:4000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  migrate:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DB_HOST: db
+      DB_USER: loom_app
+      DB_PASSWORD: loom_app_password
+      DB_NAME: loom
+    command: ["node", "src/config/runMigrations.js"]
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  mysql_data:
