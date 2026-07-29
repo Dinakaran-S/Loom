@@ -23,6 +23,33 @@ const FONT_HEAD = "'Space Grotesk', 'Inter', sans-serif";
 const FONT_BODY = "'Inter', sans-serif";
 const FONT_MONO = "'JetBrains Mono', ui-monospace, monospace";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+
+function supabaseIsConfigured() {
+  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+}
+
+async function supabaseAuth(path, { method = "GET", body, token } = {}) {
+  if (!supabaseIsConfigured()) throw new Error("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to frontend/.env.");
+  const response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+    method,
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.msg || payload.message || payload.error_description || "Supabase authentication failed");
+  return payload;
+}
+
+function saveSession(session) {
+  localStorage.setItem("loom_supabase_session", JSON.stringify(session));
+  localStorage.setItem("loom_access_token", session.access_token);
+}
 
 async function api(path, { token, method = "GET", body } = {}) {
   let response;
@@ -37,18 +64,9 @@ async function api(path, { token, method = "GET", body } = {}) {
     throw new Error(`Cannot reach the API at ${API_URL}. Start the backend and check VITE_API_URL.`);
   }
   const payload = await response.json().catch(() => ({}));
-  if (response.status === 401 && token && path !== "/auth/refresh") {
-    const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
-      method: "POST", credentials: "include", headers: { "Content-Type": "application/json" },
-    });
-    const refreshPayload = await refreshResponse.json().catch(() => ({}));
-    const accessToken = refreshPayload.data?.accessToken;
-    if (refreshResponse.ok && accessToken) {
-      localStorage.setItem("loom_access_token", accessToken);
-      window.dispatchEvent(new CustomEvent("loom-token-refreshed", { detail: accessToken }));
-      return api(path, { token: accessToken, method, body });
-    }
+  if (response.status === 401 && token) {
     localStorage.removeItem("loom_access_token");
+    localStorage.removeItem("loom_supabase_session");
     window.dispatchEvent(new CustomEvent("loom-token-refreshed", { detail: "" }));
   }
   if (!response.ok) {
@@ -472,6 +490,18 @@ export default function Loom() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const stored = localStorage.getItem("loom_supabase_session");
+    if (!stored) return;
+    try {
+      const session = JSON.parse(stored);
+      if (!session.refresh_token) return;
+      supabaseAuth("/token?grant_type=refresh_token", { method: "POST", body: { refresh_token: session.refresh_token } })
+        .then((nextSession) => { saveSession(nextSession); setToken(nextSession.access_token); })
+        .catch(() => { localStorage.removeItem("loom_supabase_session"); localStorage.removeItem("loom_access_token"); });
+    } catch { localStorage.removeItem("loom_supabase_session"); }
+  }, []);
+
+  useEffect(() => {
     if (!token) return;
     api("/settings/providers", { token })
       .then((result) => setGroqSettings({ configured: result.groqConfigured, model: result.groqModel }))
@@ -522,9 +552,15 @@ export default function Loom() {
     }
     setAuthBusy(true);
     try {
-      const result = await api(registering ? "/auth/register" : "/auth/login", { method: "POST", body: registering ? { email, password, name } : { email, password } });
-      localStorage.setItem("loom_access_token", result.accessToken);
-      setToken(result.accessToken);
+      const result = registering
+        ? await supabaseAuth("/signup", { method: "POST", body: { email, password, data: { name } } })
+        : await supabaseAuth("/token?grant_type=password", { method: "POST", body: { email, password } });
+      if (!result.access_token) {
+        setError("Account created. Check your email to confirm it, then sign in.");
+        return;
+      }
+      saveSession(result);
+      setToken(result.access_token);
     } catch (err) { setError(err.message); }
     finally { setAuthBusy(false); }
   };

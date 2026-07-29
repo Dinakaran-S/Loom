@@ -51,6 +51,11 @@ module.exports = {
       : (process.env.GROQ_MODEL || "openai/gpt-oss-120b"),
   },
 
+  supabase: {
+    url: (process.env.SUPABASE_URL || "").replace(/\/$/, ""),
+    anonKey: process.env.SUPABASE_ANON_KEY || "",
+  },
+
   projectsRoot: process.env.PROJECTS_ROOT || "./workspaces",
   reviewMaxAttempts: parseInt(process.env.REVIEW_MAX_ATTEMPTS || "2", 10),
   credentialEncryptionKey: process.env.CREDENTIAL_ENCRYPTION_KEY || "",
