@@ -93,15 +93,70 @@ const GlobalStyle = () => (
     @keyframes loomBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
     @keyframes loomFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .loom-fade { animation: loomFade 500ms cubic-bezier(0.16,1,0.3,1) both; }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body, #root { min-height: 100%; margin: 0; background: #080d14; }
+    html { overflow-x: hidden; }
+    body { overflow-x: hidden; }
+    img, svg { max-width: 100%; }
+    button, input, textarea { font: inherit; }
     input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
       -webkit-text-fill-color: #f5f7fa; -webkit-box-shadow: 0 0 0 1000px #101722 inset; transition: background-color 5000s ease-in-out 0s;
     }
     .auth-layout { width: min(1040px, calc(100vw - 48px)); min-height: 620px; display: grid; grid-template-columns: 1.1fr .9fr; overflow: hidden; border: 1px solid rgba(151, 169, 197, .20); border-radius: 28px; background: rgba(13,20,31,.88); box-shadow: 0 30px 80px rgba(0,0,0,.42); }
     .auth-brief { padding: 54px; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(145deg, rgba(41,226,190,.13), rgba(36,55,116,.04) 60%); border-right: 1px solid rgba(151,169,197,.14); }
     .auth-form { display: flex; align-items: center; padding: 42px; background: rgba(11,17,27,.72); }
+    .app-shell { min-height: 100dvh !important; border-radius: 0 !important; }
+    .app-layout { min-height: 100dvh !important; }
+    .app-sidebar { flex: 0 0 216px; }
+    .app-main { min-width: 0; }
+    .app-header { gap: 16px; }
+    .app-header-copy { min-width: 0; }
+
+    /* ---- shared responsive helpers ---- */
+    .glass-panel { width: 100%; max-width: 640px; }
+    .agent-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat-card { flex: 1 1 140px; min-width: 140px; }
+    .nav-label { white-space: nowrap; }
+
+    @media (max-width: 900px) {
+      .auth-layout { grid-template-columns: 1fr .8fr; }
+      .auth-brief { padding: 40px; }
+    }
+
     @media (max-width: 760px) { .auth-layout { width: min(440px, calc(100vw - 28px)); grid-template-columns: 1fr; min-height: auto; } .auth-brief { display: none; } .auth-form { padding: 30px 24px; } }
+    @media (max-width: 800px) {
+      .app-layout { flex-direction: column; }
+      .app-sidebar { width: 100% !important; padding: 10px 12px !important; display: flex; align-items: center; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; border-right: none !important; border-bottom: 1px solid ${T.border} !important; }
+      .app-sidebar > div:first-child { flex: 0 0 auto; margin: 0 !important; padding: 0 8px !important; }
+      .app-sidebar > button { flex: 0 0 auto; width: auto !important; margin: 0 !important; padding: 9px 11px !important; }
+      .app-sidebar > div:last-child { display: none; }
+      .app-main { width: 100%; padding: 20px !important; }
+    }
+    @media (max-width: 560px) {
+      .auth-page { align-items: flex-start !important; padding: 14px !important; }
+      .auth-layout { width: 100%; border-radius: 20px; }
+      .auth-form { padding: 26px 20px; }
+      .app-main { padding: 16px !important; }
+      .app-header { align-items: flex-start !important; margin-bottom: 16px !important; flex-wrap: wrap; }
+      .app-header h1, .app-header-title { font-size: 19px !important; }
+      .glass-panel { padding: 18px !important; border-radius: 16px !important; }
+      .stat-card { flex: 1 1 calc(50% - 6px); min-width: 0; padding: 13px 14px !important; }
+      .stat-card div:last-child { font-size: 22px !important; }
+      .agent-grid { grid-template-columns: 1fr !important; }
+      input, textarea, select { font-size: 16px !important; }
+      .provider-table { overflow: visible !important; background: transparent !important; border: 0 !important; }
+      .provider-head { display: none !important; }
+      .provider-row { display: flex !important; flex-wrap: wrap; gap: 8px 12px; padding: 14px !important; margin-bottom: 10px; border: 1px solid ${T.border} !important; border-radius: 12px; background: ${T.card}; }
+      .provider-row > span:first-child { width: 100%; }
+      .provider-row > span:nth-child(2), .provider-row > span:nth-child(3) { font-size: 11.5px !important; }
+      .provider-row > div { width: 100%; justify-content: flex-start !important; }
+    }
+    @media (max-width: 420px) {
+      .nav-label { font-size: 12.5px; }
+      .app-sidebar > button { padding: 9px 9px !important; }
+      .stat-card { flex: 1 1 100%; }
+    }
     @media (prefers-reduced-motion: reduce) {
       .loom-orb { animation: none !important; }
       .loom-fade { animation: none !important; }
@@ -178,7 +233,7 @@ function Pill({ color, label, pulse }) {
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999,
       background: `${color}1A`, border: `1px solid ${color}40`, fontSize: 12, fontWeight: 600, color,
-      fontFamily: FONT_BODY,
+      fontFamily: FONT_BODY, whiteSpace: "nowrap",
     }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, animation: pulse ? "loomBlink 1.2s ease-in-out infinite" : "none" }} />
       {label}
@@ -189,7 +244,7 @@ function Pill({ color, label, pulse }) {
 function IconButton({ icon: Icon, onClick }) {
   return (
     <button onClick={onClick} style={{
-      width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+      width: 34, height: 34, minWidth: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
       cursor: "pointer", ...glass(0.07), transition: "all 200ms ease-out",
     }}
       onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.14)"}
@@ -202,8 +257,8 @@ function IconButton({ icon: Icon, onClick }) {
 
 function StatCard({ label, value, accent }) {
   return (
-    <div className="loom-fade" style={{
-      ...glass(0.07), borderRadius: 16, padding: "16px 20px", flex: 1, minWidth: 140,
+    <div className="loom-fade stat-card" style={{
+      ...glass(0.07), borderRadius: 16, padding: "16px 20px",
       boxShadow: `0 8px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 40px ${accent}26`,
     }}>
       <div style={{ fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", color: T.textSec, marginBottom: 8, textTransform: "uppercase" }}>{label}</div>
@@ -219,30 +274,30 @@ function AgentCard({ agent }) {
   const accent = agent.provider === "paid" ? T.blue : T.teal;
   return (
     <div className="loom-fade" style={{
-      background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16,
+      background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, minWidth: 0,
       transition: "border-color 200ms ease-out, background 200ms ease-out",
     }}
       onMouseEnter={(e) => e.currentTarget.style.borderColor = "rgba(255,255,255,0.24)"}
       onMouseLeave={(e) => e.currentTarget.style.borderColor = T.border}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
           <div style={{
-            width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center",
+            width: 34, height: 34, minWidth: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center",
             background: `${accent}1F`, border: `1px solid ${accent}40`,
           }}>
             <Icon size={16} color={accent} />
           </div>
-          <div>
-            <div style={{ fontFamily: FONT_BODY, fontWeight: 600, fontSize: 14, color: T.text }}>{agent.name}</div>
-            <div style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: T.textMuted }}>{agent.role}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: FONT_BODY, fontWeight: 600, fontSize: 14, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{agent.name}</div>
+            <div style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: T.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{agent.role}</div>
           </div>
         </div>
         <Pill color={s.color} label={s.label} pulse={agent.status === "working"} />
       </div>
-      <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: T.textSec, lineHeight: 1.5 }}>{agent.task}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-        <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: T.textMuted }}>{agent.model}</span>
+      <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: T.textSec, lineHeight: 1.5, wordBreak: "break-word" }}>{agent.task}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}`, gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: T.textMuted, wordBreak: "break-word" }}>{agent.model}</span>
         <span style={{ fontFamily: FONT_BODY, fontSize: 11, fontWeight: 600, color: accent }}>{agent.provider === "paid" ? "Paid" : "Free"}</span>
       </div>
     </div>
@@ -255,27 +310,27 @@ function Dashboard({ agents, project, projects, files, artifact, onOpenFile, onS
   const errors = agents.filter(a => a.status === "error").length;
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+      <div className="stat-row" style={{ marginBottom: 20 }}>
         <StatCard label="Active" value={working} accent={T.info} />
         <StatCard label="Done" value={done} accent={T.success} />
         <StatCard label="Flagged" value={errors} accent={T.error} />
         <StatCard label="Files" value={files.length} accent={T.teal} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+      <div className="agent-grid">
         {agents.map(a => <AgentCard key={a.id} agent={a} />)}
       </div>
-      {project && <div style={{ marginTop: 18, fontFamily: FONT_BODY, color: T.textSec, fontSize: 13 }}>
+      {project && <div style={{ marginTop: 18, fontFamily: FONT_BODY, color: T.textSec, fontSize: 13, wordBreak: "break-word" }}>
         <strong style={{ color: T.text }}>{project.name}</strong> · {project.status}{project.integration_report?.explanation ? ` · ${project.integration_report.explanation}` : ""}
         {files.length > 0 && <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {files.map((file) => <button key={file} onClick={() => onOpenFile(file)} style={{ cursor: "pointer", border: `1px solid ${T.border}`, borderRadius: 6, padding: "5px 8px", background: T.surface, color: T.teal, fontFamily: FONT_MONO, fontSize: 11 }}>{file}</button>)}
+          {files.map((file) => <button key={file} onClick={() => onOpenFile(file)} style={{ cursor: "pointer", border: `1px solid ${T.border}`, borderRadius: 6, padding: "5px 8px", background: T.surface, color: T.teal, fontFamily: FONT_MONO, fontSize: 11, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>{file}</button>)}
         </div>}
       </div>}
       {projects.length > 0 && <div style={{ marginTop: 16, display: "flex", gap: 7, flexWrap: "wrap" }}>
-        {projects.slice(0, 8).map((item) => <button key={item.id} onClick={() => onSelectProject(item.id)} style={{ cursor: "pointer", border: `1px solid ${item.id === project?.id ? T.teal : T.border}`, borderRadius: 7, padding: "7px 9px", background: T.card, color: T.textSec, fontFamily: FONT_BODY, fontSize: 12 }}>{item.name} · {item.status}</button>)}
+        {projects.slice(0, 8).map((item) => <button key={item.id} onClick={() => onSelectProject(item.id)} style={{ cursor: "pointer", border: `1px solid ${item.id === project?.id ? T.teal : T.border}`, borderRadius: 7, padding: "7px 9px", background: T.card, color: T.textSec, fontFamily: FONT_BODY, fontSize: 12, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name} · {item.status}</button>)}
       </div>}
       {artifact && <div style={{ marginTop: 16, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
-        <div style={{ padding: "10px 14px", fontFamily: FONT_MONO, fontSize: 12, color: T.textSec, borderBottom: `1px solid ${T.border}` }}>{artifact.path} · {artifact.size} bytes</div>
-        <pre style={{ margin: 0, padding: 14, maxHeight: 360, overflow: "auto", whiteSpace: "pre-wrap", color: T.text, fontFamily: FONT_MONO, fontSize: 12, lineHeight: 1.55 }}>{artifact.content}</pre>
+        <div style={{ padding: "10px 14px", fontFamily: FONT_MONO, fontSize: 12, color: T.textSec, borderBottom: `1px solid ${T.border}`, wordBreak: "break-word" }}>{artifact.path} · {artifact.size} bytes</div>
+        <pre style={{ margin: 0, padding: 14, maxHeight: 360, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", color: T.text, fontFamily: FONT_MONO, fontSize: 12, lineHeight: 1.55 }}>{artifact.content}</pre>
       </div>}
     </div>
   );
@@ -290,24 +345,24 @@ function Providers({ agents, setAgents, onSave }) {
     onSave?.(id === "be" ? "backend" : id === "fe" ? "frontend" : id === "db" ? "database" : id === "test" ? "testing" : id === "rev" ? "reviewer" : id, provider);
   };
   return (
-    <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
+    <div className="provider-table" style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
       <div style={{
         display: "grid", gridTemplateColumns: "1.4fr 1.4fr 1fr auto", padding: "12px 18px",
         borderBottom: `1px solid ${T.border}`, background: T.surface,
         fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", color: T.textSec, textTransform: "uppercase",
-      }}>
+      }} className="provider-head">
         <span>Agent</span><span>Model</span><span>Role</span><span style={{ textAlign: "right" }}>Route</span>
       </div>
       {agents.map((a, i) => (
-        <div key={a.id} style={{
+        <div key={a.id} className="provider-row" style={{
           display: "grid", gridTemplateColumns: "1.4fr 1.4fr 1fr auto", padding: "14px 18px", alignItems: "center",
           borderBottom: i < agents.length - 1 ? `1px solid ${T.border}` : "none",
         }}>
-          <span style={{ fontFamily: FONT_BODY, fontSize: 13.5, fontWeight: 600, color: T.text, display: "flex", alignItems: "center", gap: 9 }}>
-            <a.icon size={14} color={a.provider === "paid" ? T.blue : T.teal} /> {a.name}
+          <span style={{ fontFamily: FONT_BODY, fontSize: 13.5, fontWeight: 600, color: T.text, display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+            <a.icon size={14} color={a.provider === "paid" ? T.blue : T.teal} /> <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</span>
           </span>
-          <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: T.textSec }}>{a.model}</span>
-          <span style={{ fontFamily: FONT_BODY, fontSize: 12.5, color: T.textMuted }}>{a.role}</span>
+          <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: T.textSec, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.model}</span>
+          <span style={{ fontFamily: FONT_BODY, fontSize: 12.5, color: T.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.role}</span>
           <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
             {["free", "paid"].map(p => (
               <button key={p} onClick={() => setProvider(a.id, p)} style={{
@@ -333,14 +388,14 @@ function SettingsPanel({ configured, model, onSave, busy }) {
     try { await onSave(apiKey); setApiKey(""); setMessage("Saved. Groq is ready for new builds."); }
     catch (err) { setMessage(err.message); }
   };
-  return <form onSubmit={save} style={{ maxWidth: 560, ...glass(0.07), borderRadius: 20, padding: 24 }}>
+  return <form onSubmit={save} className="glass-panel" style={{ maxWidth: 560, ...glass(0.07), borderRadius: 20, padding: 24 }}>
     <div style={{ fontFamily: FONT_HEAD, fontSize: 18, fontWeight: 700, color: T.text }}>Groq API key</div>
     <p style={{ fontFamily: FONT_BODY, fontSize: 13, lineHeight: 1.6, color: T.textSec, margin: "8px 0 18px" }}>{configured ? `Connected to ${model}. Add a new key to replace it.` : "Add a Groq key to run the free agent route."}</p>
     <label style={{ display: "block", fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, color: T.textSec, marginBottom: 7 }}>API key</label>
-    <input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="gsk_..." required minLength={20} style={{ width: "100%", borderRadius: 10, padding: 13, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontFamily: FONT_MONO, fontSize: 13, outline: "none" }} />
+    <input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="gsk_..." required minLength={20} style={{ width: "100%", boxSizing: "border-box", borderRadius: 10, padding: 13, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontFamily: FONT_MONO, fontSize: 13, outline: "none" }} />
     <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: T.textMuted, marginTop: 10 }}>The key is sent to the backend and is never displayed again.</div>
     {message && <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: message.startsWith("Saved") ? T.success : T.error, marginTop: 12 }}>{message}</div>}
-    <button disabled={busy || apiKey.trim().length < 20} type="submit" style={{ marginTop: 18, padding: "11px 16px", borderRadius: 9, border: "none", background: T.teal, color: "#08150F", fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: busy || apiKey.trim().length < 20 ? 0.5 : 1 }}>Save Groq key</button>
+    <button disabled={busy || apiKey.trim().length < 20} type="submit" style={{ marginTop: 18, width: "100%", padding: "11px 16px", borderRadius: 9, border: "none", background: T.teal, color: "#08150F", fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: busy || apiKey.trim().length < 20 ? 0.5 : 1 }}>Save Groq key</button>
   </form>;
 }
 
@@ -349,7 +404,7 @@ function NewProject({ onLaunch, busy }) {
   const [name, setName] = useState("");
   const [spec, setSpec] = useState("");
   return (
-    <div style={{ maxWidth: 640, ...glass(0.07), borderRadius: 20, padding: 24, boxShadow: `0 8px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 40px ${T.teal}1F` }}>
+    <div className="glass-panel" style={{ maxWidth: 640, ...glass(0.07), borderRadius: 20, padding: 24, boxShadow: `0 8px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 40px ${T.teal}1F` }}>
       <div style={{ fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", color: T.textSec, marginBottom: 10, textTransform: "uppercase" }}>Project spec</div>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" style={{ width: "100%", boxSizing: "border-box", borderRadius: 10, padding: 13, marginBottom: 12, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontFamily: FONT_BODY, fontSize: 14, outline: "none" }} />
       <textarea
@@ -389,7 +444,7 @@ function NewProject({ onLaunch, busy }) {
 
 /* ---------- login ---------- */
 function BrandLogo({ width = 155 }) {
-  return <img src="/loom-mark.svg" alt="Loom" style={{ display: "block", width, height: "auto" }} />;
+  return <img src="/loom-mark.svg" alt="Loom" style={{ display: "block", width, height: "auto", maxWidth: "100%" }} />;
 }
 
 function Login({ onLogin, error, busy }) {
@@ -405,7 +460,7 @@ function Login({ onLogin, error, busy }) {
     padding: "0 12px", marginBottom: 14, transition: "all 180ms ease-out",
   });
   return (
-    <div style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", padding: 24 }}>
+    <div className="auth-page" style={{ position: "relative", minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", padding: 24 }}>
       <Background dense={false} />
       <div className="auth-layout loom-fade" style={{ position: "relative", zIndex: 1 }}>
         <aside className="auth-brief">
@@ -423,17 +478,17 @@ function Login({ onLogin, error, busy }) {
           <div style={{ fontFamily: FONT_BODY, fontSize: 14, color: T.textSec, marginTop: 8 }}>{registering ? "Create an account to coordinate your agent team." : "Sign in to return to your workspace."}</div>
         </div>
 
-        {registering && <div style={inputWrap("name")}><User size={15} color={T.textMuted} /><input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} onFocus={() => setFocus("name")} onBlur={() => setFocus(null)} placeholder="Your name" style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: T.text, fontFamily: FONT_BODY, fontSize: 13.5, padding: "11px 0" }} /></div>}
+        {registering && <div style={inputWrap("name")}><User size={15} color={T.textMuted} /><input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} onFocus={() => setFocus("name")} onBlur={() => setFocus(null)} placeholder="Your name" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", color: T.text, fontFamily: FONT_BODY, fontSize: 13.5, padding: "11px 0" }} /></div>}
 
         <div style={inputWrap("email")}>
           <Mail size={15} color={T.textMuted} />
           <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocus("email")} onBlur={() => setFocus(null)}
-            placeholder="you@email.com" style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: T.text, fontFamily: FONT_BODY, fontSize: 13.5, padding: "11px 0" }} />
+            placeholder="you@email.com" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", color: T.text, fontFamily: FONT_BODY, fontSize: 13.5, padding: "11px 0" }} />
         </div>
         <div style={inputWrap("pass")}>
           <Lock size={15} color={T.textMuted} />
           <input type="password" autoComplete={registering ? "new-password" : "current-password"} value={pass} onChange={(e) => setPass(e.target.value)} onFocus={() => setFocus("pass")} onBlur={() => setFocus(null)}
-            placeholder="Password" style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: T.text, fontFamily: FONT_BODY, fontSize: 13.5, padding: "11px 0" }} />
+            placeholder="Password" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", color: T.text, fontFamily: FONT_BODY, fontSize: 13.5, padding: "11px 0" }} />
         </div>
 
         {!registering && <div style={{ textAlign: "right", marginTop: -3, marginBottom: 20 }}>
@@ -469,7 +524,7 @@ function NavItem({ icon: Icon, label, active, onClick }) {
       onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
       onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
     >
-      <Icon size={16} /> {label}
+      <Icon size={16} style={{ flexShrink: 0 }} /> <span className="nav-label">{label}</span>
     </button>
   );
 }
@@ -607,7 +662,7 @@ export default function Loom() {
   };
 
   if (!token) return (
-    <div style={{ position: "relative", minHeight: 640 }}>
+    <div style={{ position: "relative", minHeight: "100dvh" }}>
       <GlobalStyle />
       <Login onLogin={login} error={error} busy={authBusy} />
     </div>
@@ -621,25 +676,25 @@ export default function Loom() {
   ];
 
   return (
-    <div style={{ position: "relative", minHeight: 640, borderRadius: 16, overflow: "hidden" }}>
+    <div className="app-shell" style={{ position: "relative", minHeight: "100dvh", borderRadius: 16, overflow: "hidden" }}>
       <GlobalStyle />
       <Background dense={true} />
-      <div style={{ position: "relative", zIndex: 1, display: "flex", minHeight: 640 }}>
-        <div style={{ width: 216, padding: 18, ...glass(0.06), borderRadius: 0, borderTop: "none", borderBottom: "none", borderLeft: "none" }}>
+      <div className="app-layout" style={{ position: "relative", zIndex: 1, display: "flex", minHeight: "100dvh" }}>
+        <div className="app-sidebar" style={{ width: 216, padding: 18, ...glass(0.06), borderRadius: 0, borderTop: "none", borderBottom: "none", borderLeft: "none" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 26, padding: "0 4px" }}>
             <BrandLogo width={112} />
           </div>
           {nav.map(n => <NavItem key={n.id} {...n} active={view === n.id} onClick={() => setView(n.id)} />)}
           <div style={{ marginTop: 26, padding: 13, borderRadius: 11, background: "rgba(255,255,255,0.04)", border: `1px solid ${T.border}` }}>
             <div style={{ fontFamily: FONT_BODY, fontSize: 11, color: T.textMuted, marginBottom: 4 }}>Active project</div>
-            <div style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 600, color: T.text }}>{project?.name || "No active project"}</div>
+            <div style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project?.name || "No active project"}</div>
           </div>
         </div>
 
-        <div style={{ flex: 1, padding: "24px 28px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <div>
-              <div style={{ fontFamily: FONT_HEAD, fontSize: 22, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
+        <div className="app-main" style={{ flex: 1, padding: "24px 28px", minWidth: 0 }}>
+          <div className="app-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div className="app-header-copy">
+              <div className="app-header-title" style={{ fontFamily: FONT_HEAD, fontSize: 22, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
                 {view === "dashboard" && "Agent activity"}
                 {view === "providers" && "Model providers"}
                 {view === "new" && "Start a new build"}
@@ -654,7 +709,7 @@ export default function Loom() {
             <IconButton icon={Settings} onClick={() => setView("settings")} />
           </div>
 
-          {error && <div style={{ color: T.error, fontFamily: FONT_BODY, fontSize: 13, marginBottom: 12 }}>{error}</div>}
+          {error && <div style={{ color: T.error, fontFamily: FONT_BODY, fontSize: 13, marginBottom: 12, wordBreak: "break-word" }}>{error}</div>}
           {view === "dashboard" && <Dashboard agents={agents} project={project} projects={projects} files={files} artifact={artifact} onOpenFile={openFile} onSelectProject={(id) => refreshProject(id).catch((err) => setError(err.message))} />}
           {view === "providers" && <Providers agents={agents} setAgents={setAgents} onSave={saveProviderPreference} />}
           {view === "settings" && <SettingsPanel configured={groqSettings.configured} model={groqSettings.model} onSave={saveGroqKey} busy={settingsBusy} />}
