@@ -6,3 +6,4 @@ dist/
 backend/workspaces/
 coverage/
 npm-debug.log*
+.vercel

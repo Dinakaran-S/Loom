@@ -16,6 +16,24 @@ loom-project/
 
 ## Quick start
 
+## Deployment
+
+The frontend is deployed on Vercel:
+
+https://loom-project-eight.vercel.app
+
+Vercel builds the Vite app from `frontend/` using the root `vercel.json`.
+The Express and Socket.IO backend is not deployed by Vercel in this setup; host
+it separately, then set this Vercel environment variable to its public API URL:
+
+```text
+VITE_API_URL=https://your-backend.example.com/api
+```
+
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel as well. Do not
+add server-only credentials such as `SUPABASE_SERVICE_ROLE_KEY`, database
+passwords, or JWT secrets to Vercel frontend environment variables.
+
 **Backend**
 ```bash
 cd backend
