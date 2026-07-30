@@ -1,8 +1,8 @@
 const { Server } = require("socket.io");
-const jwt = require("jsonwebtoken");
 const env = require("../config/env");
 const logger = require("../utils/logger");
 const projectModel = require("../models/project.model");
+const { verifyAccessToken } = require("../middleware/auth.middleware");
 
 function initSocket(httpServer) {
   const io = new Server(httpServer, {
@@ -11,11 +11,11 @@ function initSocket(httpServer) {
 
   // Require a valid access token to open a socket at all — status streams
   // can include task descriptions/error messages, not meant to be public.
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("Missing auth token"));
     try {
-      socket.user = jwt.verify(token, env.jwt.accessSecret);
+      socket.user = await verifyAccessToken(token);
       next();
     } catch {
       next(new Error("Invalid or expired token"));

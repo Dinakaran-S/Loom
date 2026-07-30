@@ -24,4 +24,17 @@ async function create({ id, email, passwordHash, name, role = "user" }) {
   return findById(id);
 }
 
-module.exports = { findByEmail, findById, create };
+// Supabase owns credentials. The local row exists to satisfy the MySQL
+// project foreign key and must never be used for password authentication.
+async function upsertSupabaseUser({ id, email, name, role = "user" }) {
+  if (!id || !email) throw new Error("Supabase user is missing an id or email");
+  await pool.execute(
+    `INSERT INTO users (id, email, password_hash, name, role)
+     VALUES (?, ?, 'SUPABASE_MANAGED', ?, ?)
+     ON DUPLICATE KEY UPDATE email = VALUES(email), name = VALUES(name), role = VALUES(role)`,
+    [id, email, name || email.split("@")[0], role]
+  );
+  return findById(id);
+}
+
+module.exports = { findByEmail, findById, create, upsertSupabaseUser };
