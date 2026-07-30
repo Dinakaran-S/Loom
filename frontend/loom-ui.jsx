@@ -25,14 +25,20 @@ const FONT_MONO = "'JetBrains Mono', ui-monospace, monospace";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+// Use the deployed application URL for confirmation links. In local dev this
+// intentionally falls back to the active origin, rather than Supabase's
+// default localhost:3000 URL.
+const AUTH_REDIRECT_URL = (import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin).replace(/\/$/, "");
 
 function supabaseIsConfigured() {
   return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
-async function supabaseAuth(path, { method = "GET", body, token } = {}) {
+async function supabaseAuth(path, { method = "GET", body, token, redirectTo } = {}) {
   if (!supabaseIsConfigured()) throw new Error("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to frontend/.env.");
-  const response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+  const endpoint = new URL(`${SUPABASE_URL}/auth/v1${path}`);
+  if (redirectTo) endpoint.searchParams.set("redirect_to", redirectTo);
+  const response = await fetch(endpoint, {
     method,
     headers: {
       apikey: SUPABASE_ANON_KEY,
@@ -41,8 +47,13 @@ async function supabaseAuth(path, { method = "GET", body, token } = {}) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.msg || payload.message || payload.error_description || "Supabase authentication failed");
+  const rawPayload = await response.text();
+  let payload = {};
+  try { payload = rawPayload ? JSON.parse(rawPayload) : {}; } catch { /* Supabase may return plain-text gateway errors. */ }
+  if (!response.ok) {
+    const message = payload.msg || payload.message || payload.error_description || payload.error || rawPayload;
+    throw new Error(message || `Supabase authentication failed (HTTP ${response.status})`);
+  }
   return payload;
 }
 
@@ -608,7 +619,7 @@ export default function Loom() {
     setAuthBusy(true);
     try {
       const result = registering
-        ? await supabaseAuth("/signup", { method: "POST", body: { email, password, data: { name } } })
+        ? await supabaseAuth("/signup", { method: "POST", redirectTo: AUTH_REDIRECT_URL, body: { email, password, data: { name } } })
         : await supabaseAuth("/token?grant_type=password", { method: "POST", body: { email, password } });
       if (!result.access_token) {
         setError("Account created. Check your email to confirm it, then sign in.");
