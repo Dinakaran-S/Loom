@@ -5,11 +5,11 @@ async function create({
   taskDescription, status, outputCode, outputExplanation,
   tokensUsed, errorMessage, taskId,
 }) {
-  await pool.execute(
+  await pool.query(
     `INSERT INTO agent_runs
       (id, user_id, agent_name, provider, model, task_description, status,
        output_code, output_explanation, tokens_used, error_message, task_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
     [id, userId, agentName, provider, model, taskDescription, status,
       outputCode || null, outputExplanation || null, tokensUsed || 0, errorMessage || null, taskId || null]
   );
@@ -17,8 +17,8 @@ async function create({
 }
 
 async function findById(id) {
-  const [rows] = await pool.execute(
-    "SELECT * FROM agent_runs WHERE id = ? LIMIT 1",
+  const { rows } = await pool.query(
+    "SELECT * FROM agent_runs WHERE id = $1 LIMIT 1",
     [id]
   );
   return rows[0] || null;
@@ -26,14 +26,14 @@ async function findById(id) {
 
 async function listByUser(userId, { page, limit }) {
   const offset = (page - 1) * limit;
-  const [rows] = await pool.query(
+  const { rows } = await pool.query(
     `SELECT id, agent_name, provider, model, status, tokens_used, created_at
-     FROM agent_runs WHERE user_id = ?
-     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+     FROM agent_runs WHERE user_id = $1
+     ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
     [userId, limit, offset]
   );
-  const [[{ total }]] = await pool.query(
-    "SELECT COUNT(*) as total FROM agent_runs WHERE user_id = ?",
+  const { rows: [{ total }] } = await pool.query(
+    "SELECT COUNT(*)::int as total FROM agent_runs WHERE user_id = $1",
     [userId]
   );
   return { rows, total };

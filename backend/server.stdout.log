@@ -1,0 +1,25 @@
+{
+  level: 'info',
+  event: 'server_started',
+  time: '2026-08-03T05:29:34.747Z',
+  port: 4000,
+  env: 'development'
+}
+{
+  level: 'info',
+  event: 'http_request',
+  time: '2026-08-03T05:30:32.590Z',
+  line: '\x1B[0mGET /api/health \x1B[32m200\x1B[0m 110.300 ms - 62\x1B[0m'
+}
+{
+  level: 'info',
+  event: 'http_request',
+  time: '2026-08-03T05:32:54.010Z',
+  line: '\x1B[0mGET /api/health \x1B[32m200\x1B[0m 1.317 ms - 62\x1B[0m'
+}
+{
+  level: 'info',
+  event: 'http_request',
+  time: '2026-08-03T05:33:10.825Z',
+  line: '\x1B[0mGET /api/health \x1B[32m200\x1B[0m 1.121 ms - 63\x1B[0m'
+}

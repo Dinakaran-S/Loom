@@ -10,10 +10,10 @@ async function run() {
   const dir = path.join(__dirname, "..", "migrations");
   const files = fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
-    filename VARCHAR(255) PRIMARY KEY,
-    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-  ) ENGINE=InnoDB`);
-  const [appliedRows] = await pool.query("SELECT filename FROM schema_migrations");
+    filename TEXT PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+  const { rows: appliedRows } = await pool.query("SELECT filename FROM schema_migrations");
   const applied = new Set(appliedRows.map((row) => row.filename));
 
   for (const file of files) {
@@ -25,10 +25,10 @@ async function run() {
     } catch (err) {
       // Earlier Loom versions had no migration ledger. Mark an already-applied
       // additive migration as complete rather than blocking an upgrade.
-      if (!["ER_DUP_FIELDNAME", "ER_DUP_KEYNAME", "ER_FK_DUP_NAME", "ER_TABLE_EXISTS_ERROR"].includes(err.code)) throw err;
+      if (!["42701", "42P07", "42710"].includes(err.code)) throw err;
       logger.warn("migration_already_applied", { file, code: err.code });
     }
-    await pool.execute("INSERT INTO schema_migrations (filename) VALUES (?)", [file]);
+    await pool.query("INSERT INTO schema_migrations (filename) VALUES ($1)", [file]);
   }
   logger.info("migrations_complete", { count: files.length });
   process.exit(0);
